@@ -1,0 +1,41 @@
+name: VLSI Code Review Bot
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+
+    permissions:
+      pull-requests: write
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: pip install requests pyyaml
+
+      - name: Get changed files
+        id: changed_files
+        run: |
+          FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | tr '\n' ',')
+          echo "files=$FILES" >> $GITHUB_OUTPUT
+
+      - name: Run VLSI Review Bot
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_DESCRIPTION: ${{ github.event.pull_request.body }}
+          CHANGED_FILES: ${{ steps.changed_files.outputs.files }}
+        run: python scripts/review.py
