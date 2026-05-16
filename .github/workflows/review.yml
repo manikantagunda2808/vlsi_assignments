@@ -27,9 +27,11 @@ jobs:
       - name: Get changed files
         id: changed_files
         run: |
-          FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | tr '\n' ',')
+          git fetch origin ${{ github.base_ref }}
+          FILES=$(git diff --name-only origin/${{ github.base_ref }} HEAD | tr '\n' ',')
           echo "files=$FILES" >> $GITHUB_OUTPUT
-
+          echo "Detected files: $FILES"
+        
       - name: Run VLSI Review Bot
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
